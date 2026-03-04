@@ -1,0 +1,1422 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Калькулятор стоимости владения — АТОМ</title>
+    <meta name="description"
+        content="Рассчитайте и сравните совокупную стоимость владения электромобилем АТОМ против гибрида и ДВС">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0a0a15;
+            --bg2: #111122;
+            --card: #161628;
+            --card2: #1e1e35;
+            --border: rgba(255, 255, 255, 0.07);
+            --text: #e8e8f0;
+            --muted: #7878a0;
+            --ev: #00D26A;
+            --ev-dim: rgba(0, 210, 106, 0.15);
+            --ev-glow: rgba(0, 210, 106, 0.35);
+            --hev: #4A90D9;
+            --hev-dim: rgba(74, 144, 217, 0.15);
+            --ice: #8B8B8B;
+            --ice-dim: rgba(139, 139, 139, 0.12);
+            --red: #ff4d6d;
+            --r: 12px;
+            --r2: 8px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        /* ── HEADER ─────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, #0d0d20 0%, #0a1628 100%);
+            border-bottom: 1px solid var(--border);
+            padding: 28px 24px 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(0, 210, 106, 0.08) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 6px;
+        }
+
+        .logo-mark {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--ev) 0%, #00a855 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 18px;
+            color: #000;
+            letter-spacing: -1px;
+        }
+
+        .logo-text {
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: clamp(18px, 4vw, 26px);
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .header-sub {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        /* ── LAYOUT ─────────────────────────────── */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 16px 60px;
+        }
+
+        section {
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--muted);
+            margin-bottom: 14px;
+        }
+
+        /* ── SCENARIO CARDS ─────────────────────── */
+        .scenarios {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .scenario-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 18px 16px;
+            cursor: pointer;
+            transition: all .25s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .scenario-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .scenario-card.active {
+            border-color: var(--ev);
+            background: linear-gradient(135deg, rgba(0, 210, 106, 0.1) 0%, rgba(0, 210, 106, 0.04) 100%);
+            box-shadow: 0 0 0 1px var(--ev), var(--shadow);
+        }
+
+        .scenario-card.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--ev), #00FF88);
+        }
+
+        .sc-icon {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .sc-name {
+            font-size: 15px;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+
+        .sc-detail {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.4;
+        }
+
+        .sc-badge {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--ev);
+            background: var(--ev-dim);
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        /* ── PARAMS PANEL ───────────────────────── */
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+        }
+
+        .param-block {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 16px;
+            transition: border-color .2s;
+        }
+
+        .param-block:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        .param-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .param-label span {
+            color: var(--muted);
+            font-weight: 400;
+            text-transform: none;
+            letter-spacing: 0;
+        }
+
+        .param-value-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .param-value-row input[type="number"] {
+            flex: 1;
+            min-width: 0;
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            color: #fff;
+            font-family: inherit;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 8px 12px;
+            outline: none;
+            transition: border-color .2s;
+            -moz-appearance: textfield;
+        }
+
+        .param-value-row input[type="number"]::-webkit-inner-spin-button {
+            display: none;
+        }
+
+        .param-value-row input[type="number"]:focus {
+            border-color: var(--ev);
+        }
+
+        .param-unit {
+            font-size: 13px;
+            color: var(--muted);
+            white-space: nowrap;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--ev);
+            box-shadow: 0 0 8px var(--ev-glow);
+            cursor: pointer;
+            transition: transform .15s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .range-minmax {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        /* ── RESULTS TABLE ──────────────────────── */
+        .results-grid {
+            display: grid;
+            grid-template-columns: 200px repeat(3, 1fr);
+            gap: 0;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            overflow: hidden;
+        }
+
+        .rg-header {
+            display: contents;
+        }
+
+        .rg-col-label {
+            background: var(--card2);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .rg-col-head {
+            padding: 16px 20px;
+            position: relative;
+            border-left: 1px solid var(--border);
+        }
+
+        .rg-col-head.ev {
+            background: rgba(0, 210, 106, 0.07);
+            border-top: 2px solid var(--ev);
+        }
+
+        .rg-col-head.hev {
+            background: rgba(74, 144, 217, 0.07);
+            border-top: 2px solid var(--hev);
+        }
+
+        .rg-col-head.ice {
+            background: rgba(139, 139, 139, 0.05);
+            border-top: 2px solid var(--ice);
+        }
+
+        .car-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: #fff;
+        }
+
+        .car-sub {
+            font-size: 11px;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .car-price-tag {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .car-tco {
+            font-size: clamp(20px, 3vw, 28px);
+            font-weight: 800;
+            margin-top: 8px;
+            transition: all .4s ease;
+        }
+
+        .car-tco.ev {
+            color: var(--ev);
+        }
+
+        .car-tco.hev {
+            color: var(--hev);
+        }
+
+        .car-tco.ice {
+            color: var(--ice);
+        }
+
+        .saving-badge {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 20px;
+            transition: all .4s ease;
+        }
+
+        .saving-badge.green {
+            background: var(--ev-dim);
+            color: var(--ev);
+        }
+
+        .saving-badge.blue {
+            background: var(--hev-dim);
+            color: var(--hev);
+        }
+
+        .saving-badge.neutral {
+            background: var(--ice-dim);
+            color: var(--ice);
+        }
+
+        .rg-row {
+            display: contents;
+        }
+
+        .rg-row:not(:first-child)>* {
+            border-top: 1px solid var(--border);
+        }
+
+        .rg-label {
+            padding: 12px 16px;
+            font-size: 13px;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--card2);
+            cursor: help;
+            position: relative;
+        }
+
+        .rg-label .cat-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .rg-cell {
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: 600;
+            border-left: 1px solid var(--border);
+            transition: all .4s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .rg-cell.ev {
+            color: var(--text);
+        }
+
+        .tooltip {
+            display: none;
+            position: absolute;
+            left: 100%;
+            top: 50%;
+            transform: translateY(-50%);
+            margin-left: 8px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: var(--r2);
+            padding: 8px 12px;
+            font-size: 12px;
+            color: var(--muted);
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            pointer-events: none;
+        }
+
+        .rg-label:hover .tooltip {
+            display: block;
+        }
+
+        /* ── CHARTS ─────────────────────────────── */
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .chart-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 20px;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 16px;
+        }
+
+        .chart-wrap {
+            position: relative;
+        }
+
+        .stacked-bar-wrap {
+            height: 320px;
+        }
+
+        .donuts-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .donut-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--r);
+            padding: 16px;
+            text-align: center;
+        }
+
+        .donut-label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .donut-label.ev {
+            color: var(--ev);
+        }
+
+        .donut-label.hev {
+            color: var(--hev);
+        }
+
+        .donut-label.ice {
+            color: var(--ice);
+        }
+
+        .donut-wrap {
+            position: relative;
+            height: 160px;
+        }
+
+        /* ── SAVINGS BLOCKS ─────────────────────── */
+        .savings-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .savings-card {
+            background: linear-gradient(135deg, rgba(0, 210, 106, 0.08) 0%, rgba(0, 210, 106, 0.03) 100%);
+            border: 1px solid rgba(0, 210, 106, 0.3);
+            border-radius: var(--r);
+            padding: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .savings-card::before {
+            content: '';
+            position: absolute;
+            top: -40px;
+            right: -40px;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 210, 106, 0.12) 0%, transparent 70%);
+        }
+
+        .savings-sub {
+            font-size: 12px;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .8px;
+            margin-bottom: 8px;
+        }
+
+        .savings-val {
+            font-size: clamp(24px, 4vw, 36px);
+            font-weight: 800;
+            color: var(--ev);
+            transition: all .4s ease;
+        }
+
+        .savings-desc {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+        }
+
+        .savings-compare {
+            display: flex;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .savings-compare-item {
+            flex: 1;
+        }
+
+        .sci-label {
+            font-size: 11px;
+            color: var(--muted);
+            margin-bottom: 4px;
+        }
+
+        .sci-val {
+            font-size: 16px;
+            font-weight: 700;
+            transition: all .4s ease;
+        }
+
+        .sci-val.ev {
+            color: var(--ev);
+        }
+
+        .sci-val.hev {
+            color: var(--hev);
+        }
+
+        .sci-val.ice {
+            color: var(--ice);
+        }
+
+        /* ── FOOTER ─────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 24px;
+            font-size: 12px;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+        }
+
+        /* ── TRANSITIONS ─────────────────────────── */
+        .tco-animated {
+            animation: tco-pulse .4s ease;
+        }
+
+        @keyframes tco-pulse {
+            0% {
+                opacity: .4;
+                transform: scale(.97);
+            }
+
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* ── RESPONSIVE ─────────────────────────── */
+        @media (max-width: 900px) {
+            .results-grid {
+                grid-template-columns: 140px repeat(3, 1fr);
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 680px) {
+            .scenarios {
+                grid-template-columns: 1fr;
+            }
+
+            .params-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .results-grid {
+                display: flex;
+                flex-direction: column;
+            }
+
+            .rg-header {
+                display: flex;
+                gap: 2px;
+                overflow-x: auto;
+            }
+
+            .rg-col-label {
+                display: none;
+            }
+
+            .rg-col-head {
+                flex: 1;
+                min-width: 100px;
+                border-left: none;
+            }
+
+            .rg-row {
+                display: flex;
+            }
+
+            .rg-label {
+                display: none;
+            }
+
+            .rg-cell {
+                flex: 1;
+                min-width: 0;
+                flex-direction: column;
+                align-items: flex-start;
+                border-left: none;
+                border-top: 1px solid var(--border);
+                font-size: 12px;
+            }
+
+            .donuts-row {
+                grid-template-columns: 1fr;
+            }
+
+            .savings-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">
+            <div class="logo-mark">A</div>
+            <span class="logo-text">АТОМ</span>
+        </div>
+        <h1>Калькулятор стоимости владения</h1>
+        <p class="header-sub">Сравните TCO — электромобиль против гибрида и ДВС</p>
+    </header>
+
+    <div class="container">
+
+        <!-- SCENARIO -->
+        <section>
+            <div class="section-title">Выберите сценарий использования</div>
+            <div class="scenarios">
+                <div class="scenario-card active" data-scenario="personal" onclick="setScenario('personal')">
+                    <div class="sc-icon">🚗</div>
+                    <div class="sc-name">Личное авто</div>
+                    <div class="sc-detail">15 000 км/год · 5 лет<br>Покупка в кредит</div>
+                    <div class="sc-badge">Кредит 20% годовых</div>
+                </div>
+                <div class="scenario-card" data-scenario="taxi" onclick="setScenario('taxi')">
+                    <div class="sc-icon">🚕</div>
+                    <div class="sc-name">Такси</div>
+                    <div class="sc-detail">90 000 км/год · 4 года<br>Коммерческая эксплуатация</div>
+                    <div class="sc-badge">Лизинг 20% годовых</div>
+                </div>
+                <div class="scenario-card" data-scenario="carsharing" onclick="setScenario('carsharing')">
+                    <div class="sc-icon">🚙</div>
+                    <div class="sc-name">Каршеринг</div>
+                    <div class="sc-detail">40 000 км/год · 4 года<br>B2B модель, высокий износ</div>
+                    <div class="sc-badge">Лизинг 20% годовых</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- PARAMS -->
+        <section>
+            <div class="section-title">Параметры расчёта</div>
+            <div class="params-grid">
+
+                <div class="param-block">
+                    <div class="param-label">Цена АТОМ EV <span id="lbl-ev-price"></span></div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-ev-price" step="50000" min="1000000" max="6000000" value="2975000"
+                            oninput="syncSlider('ev-price');calc()">
+                        <span class="param-unit">₽</span>
+                    </div>
+                    <input type="range" id="sl-ev-price" step="50000" min="1000000" max="6000000" value="2975000"
+                        oninput="syncInput('ev-price');calc()">
+                    <div class="range-minmax"><span>1 млн</span><span>6 млн</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Цена гибрида <span id="lbl-hev-price"></span></div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-hev-price" step="50000" min="1000000" max="8000000" value="3300000"
+                            oninput="syncSlider('hev-price');calc()">
+                        <span class="param-unit">₽</span>
+                    </div>
+                    <input type="range" id="sl-hev-price" step="50000" min="1000000" max="8000000" value="3300000"
+                        oninput="syncInput('hev-price');calc()">
+                    <div class="range-minmax"><span>1 млн</span><span>8 млн</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Цена ДВС <span id="lbl-ice-price"></span></div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-ice-price" step="50000" min="500000" max="8000000" value="2500000"
+                            oninput="syncSlider('ice-price');calc()">
+                        <span class="param-unit">₽</span>
+                    </div>
+                    <input type="range" id="sl-ice-price" step="50000" min="500000" max="8000000" value="2500000"
+                        oninput="syncInput('ice-price');calc()">
+                    <div class="range-minmax"><span>0.5 млн</span><span>8 млн</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Пробег в год</div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-mileage" step="1000" min="5000" max="150000" value="15000"
+                            oninput="syncSlider('mileage');calc()">
+                        <span class="param-unit">км</span>
+                    </div>
+                    <input type="range" id="sl-mileage" step="1000" min="5000" max="150000" value="15000"
+                        oninput="syncInput('mileage');calc()">
+                    <div class="range-minmax"><span>5 тыс</span><span>150 тыс</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Срок владения</div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-years" step="1" min="1" max="10" value="5"
+                            oninput="syncSlider('years');calc()">
+                        <span class="param-unit">лет</span>
+                    </div>
+                    <input type="range" id="sl-years" step="1" min="1" max="10" value="5"
+                        oninput="syncInput('years');calc()">
+                    <div class="range-minmax"><span>1 год</span><span>10 лет</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Стоимость электроэнергии</div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-electricity" step="0.5" min="3" max="30" value="7"
+                            oninput="syncSlider('electricity');calc()">
+                        <span class="param-unit">₽/кВт·ч</span>
+                    </div>
+                    <input type="range" id="sl-electricity" step="0.5" min="3" max="30" value="7"
+                        oninput="syncInput('electricity');calc()">
+                    <div class="range-minmax"><span>3 ₽</span><span>30 ₽</span></div>
+                </div>
+
+                <div class="param-block">
+                    <div class="param-label">Цена АИ-95</div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-fuel" step="0.5" min="40" max="120" value="62.7"
+                            oninput="syncSlider('fuel');calc()">
+                        <span class="param-unit">₽/литр</span>
+                    </div>
+                    <input type="range" id="sl-fuel" step="0.5" min="40" max="120" value="62.7"
+                        oninput="syncInput('fuel');calc()">
+                    <div class="range-minmax"><span>40 ₽</span><span>120 ₽</span></div>
+                </div>
+
+                <div class="param-block" id="credit-block">
+                    <div class="param-label">Ставка кредита / лизинга</div>
+                    <div class="param-value-row">
+                        <input type="number" id="inp-rate" step="0.5" min="5" max="40" value="20"
+                            oninput="syncSlider('rate');calc()">
+                        <span class="param-unit">%/год</span>
+                    </div>
+                    <input type="range" id="sl-rate" step="0.5" min="5" max="40" value="20"
+                        oninput="syncInput('rate');calc()">
+                    <div class="range-minmax"><span>5%</span><span>40%</span></div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- RESULTS TABLE -->
+        <section>
+            <div class="section-title">Сравнение TCO по статьям расходов</div>
+            <div class="results-grid" id="results-grid">
+                <div class="rg-col-label"></div>
+                <div class="rg-col-head ev">
+                    <div class="car-name">⚡ АТОМ EV</div>
+                    <div class="car-sub">204 л.с. · 77 кВт·ч</div>
+                    <div class="car-price-tag" id="ev-price-tag"></div>
+                    <div class="car-tco ev" id="tco-ev">—</div>
+                    <div class="saving-badge green" id="badge-ev"></div>
+                </div>
+                <div class="rg-col-head hev">
+                    <div class="car-name">🔋 Гибрид</div>
+                    <div class="car-sub">150 л.с. · HEV</div>
+                    <div class="car-price-tag" id="hev-price-tag"></div>
+                    <div class="car-tco hev" id="tco-hev">—</div>
+                    <div class="saving-badge blue" id="badge-hev"></div>
+                </div>
+                <div class="rg-col-head ice">
+                    <div class="car-name">⛽ ДВС</div>
+                    <div class="car-sub">180 л.с. · ICE</div>
+                    <div class="car-price-tag" id="ice-price-tag"></div>
+                    <div class="car-tco ice" id="tco-ice">—</div>
+                    <div class="saving-badge neutral" id="badge-ice">Базовый</div>
+                </div>
+
+                <!-- rows injected by JS -->
+            </div>
+        </section>
+
+        <!-- CHARTS -->
+        <section>
+            <div class="section-title">Структура расходов</div>
+            <div class="chart-card" style="margin-bottom:20px">
+                <div class="chart-title">Сравнение статей TCO</div>
+                <div class="chart-wrap stacked-bar-wrap">
+                    <canvas id="chart-stacked"></canvas>
+                </div>
+            </div>
+            <div class="donuts-row">
+                <div class="donut-card">
+                    <div class="donut-label ev">⚡ АТОМ EV</div>
+                    <div class="donut-wrap"><canvas id="chart-donut-ev"></canvas></div>
+                </div>
+                <div class="donut-card">
+                    <div class="donut-label hev">🔋 Гибрид</div>
+                    <div class="donut-wrap"><canvas id="chart-donut-hev"></canvas></div>
+                </div>
+                <div class="donut-card">
+                    <div class="donut-label ice">⛽ ДВС</div>
+                    <div class="donut-wrap"><canvas id="chart-donut-ice"></canvas></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SAVINGS -->
+        <section>
+            <div class="section-title">Экономия при выборе АТОМ</div>
+            <div class="savings-grid">
+                <div class="savings-card">
+                    <div class="savings-sub">💰 Экономия в месяц vs ДВС</div>
+                    <div class="savings-val" id="save-monthly">—</div>
+                    <div class="savings-desc">Разница в стоимости владения в пересчёте на месяц</div>
+                    <div class="savings-compare" style="margin-top:20px">
+                        <div class="savings-compare-item">
+                            <div class="sci-label">⚡ АТОМ / мес</div>
+                            <div class="sci-val ev" id="monthly-ev">—</div>
+                        </div>
+                        <div class="savings-compare-item">
+                            <div class="sci-label">🔋 Гибрид / мес</div>
+                            <div class="sci-val hev" id="monthly-hev">—</div>
+                        </div>
+                        <div class="savings-compare-item">
+                            <div class="sci-label">⛽ ДВС / мес</div>
+                            <div class="sci-val ice" id="monthly-ice">—</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="savings-card">
+                    <div class="savings-sub">🏆 Экономия за весь срок vs ДВС</div>
+                    <div class="savings-val" id="save-total">—</div>
+                    <div class="savings-desc">Вы экономите эту сумму, выбирая АТОМ вместо ДВС</div>
+                    <div class="savings-compare" style="margin-top:20px">
+                        <div class="savings-compare-item">
+                            <div class="sci-label">⚡ АТОМ итого</div>
+                            <div class="sci-val ev" id="total-ev">—</div>
+                        </div>
+                        <div class="savings-compare-item">
+                            <div class="sci-label">🔋 Гибрид итого</div>
+                            <div class="sci-val hev" id="total-hev">—</div>
+                        </div>
+                        <div class="savings-compare-item">
+                            <div class="sci-label">⛽ ДВС итого</div>
+                            <div class="sci-val ice" id="total-ice">—</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <footer>
+        Расчёты носят ознакомительный характер. Данные по ТО АТОМ основаны на официальной карте ТО.
+    </footer>
+
+    <script>
+        // ─────────────────────────────────────────────────────────────
+        // CONSTANTS & STATE
+        // ─────────────────────────────────────────────────────────────
+        const SCENARIOS = {
+            personal: { mileage: 15000, years: 5, mode: 'credit' },
+            taxi: { mileage: 90000, years: 4, mode: 'leasing' },
+            carsharing: { mileage: 40000, years: 4, mode: 'leasing' },
+        };
+
+        const CAR_PARAMS = {
+            ev: {
+                energyConsumption: 15,    // кВт·ч / 100 км
+                serviceInterval: 20000,
+                serviceCost: 5500,
+                annualTax: 0,
+                tireCost: 24000,
+                tireR: 17,
+                residualPersonal: 0.50,
+                residualComm: 0.35,
+                bodyRepairPerYear: 25500,
+                slesar4y: 210000,          // реальные данные из расчёта сервиса за 4 года
+                osago: { personal: 18000, taxi: 49000, carsharing: 49000 },
+            },
+            hev: {
+                fuelConsumption: 5,        // л / 100 км
+                serviceInterval: 15000,
+                serviceCost: 12000,
+                annualTax: 6750,
+                tireCost: 28000,
+                tireR: 18,
+                residualPersonal: 0.40,
+                residualComm: 0.25,
+                bodyRepairPerYear: 25000,
+                osago: { personal: 18000, taxi: 49000, carsharing: 49000 },
+                telemsInit: 20000,
+                telemsAnnual: 3600,
+            },
+            ice: {
+                fuelConsumption: 8.5,      // л / 100 км
+                serviceInterval: 10000,
+                serviceCost: 15000,
+                annualTax: 8100,
+                tireCost: 28000,
+                tireR: 18,
+                residualPersonal: 0.35,
+                residualComm: 0.20,
+                bodyRepairPerYear: 25000,
+                osago: { personal: 18000, taxi: 49000, carsharing: 49000 },
+                telemsInit: 20000,
+                telemsAnnual: 3600,
+            },
+        };
+
+        const CATEGORIES = [
+            { id: 'acquisition', icon: '🏷️', label: 'Приобретение', tip: 'Цена минус остаточная стоимость + переплата по кредиту/лизингу' },
+            { id: 'energy', icon: '⛽', label: 'Топливо / Энергия', tip: 'Расходы на зарядку или бензин за весь срок' },
+            { id: 'service', icon: '🔧', label: 'ТО и ремонт', tip: 'Плановое обслуживание и слесарный ремонт' },
+            { id: 'body', icon: '🔨', label: 'Кузовной ремонт', tip: 'Только для такси и каршеринга' },
+            { id: 'kasko', icon: '🛡️', label: 'КАСКО', tip: 'Для физлица — ежегодное снижение на 10%, для B2B — только 1-й год' },
+            { id: 'osago', icon: '📋', label: 'ОСАГО', tip: 'Обязательное страхование, зависит от сценария' },
+            { id: 'tax', icon: '🏛️', label: 'Транспортный налог', tip: 'EV освобождён от налога' },
+            { id: 'tires', icon: '⚙️', label: 'Шины + шиномонтаж', tip: 'Летние + зимние комплекты + смена' },
+            { id: 'other', icon: '📦', label: 'Прочие расходы', tip: 'Оклейка, телематика (такси/каршеринг)' },
+        ];
+
+        let currentScenario = 'personal';
+        let stackedChart = null;
+        let donutCharts = { ev: null, hev: null, ice: null };
+
+        // ─────────────────────────────────────────────────────────────
+        // HELPER
+        // ─────────────────────────────────────────────────────────────
+        const fmt = (n) => Math.round(n).toLocaleString('ru-RU') + ' ₽';
+        const fmtShort = (n) => {
+            if (Math.abs(n) >= 1e6) return (n / 1e6).toFixed(1).replace('.', ',') + ' млн ₽';
+            if (Math.abs(n) >= 1e3) return Math.round(n / 1000) + ' тыс ₽';
+            return Math.round(n) + ' ₽';
+        };
+
+        function val(id) { return parseFloat(document.getElementById('inp-' + id).value) || 0; }
+
+        function syncInput(id) {
+            const s = document.getElementById('sl-' + id);
+            const inp = document.getElementById('inp-' + id);
+            inp.value = s.value;
+        }
+        function syncSlider(id) {
+            const s = document.getElementById('sl-' + id);
+            const inp = document.getElementById('inp-' + id);
+            s.value = inp.value;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // SCENARIO
+        // ─────────────────────────────────────────────────────────────
+        function setScenario(sc) {
+            currentScenario = sc;
+            document.querySelectorAll('.scenario-card').forEach(c => {
+                c.classList.toggle('active', c.dataset.scenario === sc);
+            });
+            const s = SCENARIOS[sc];
+            ['mileage', 'years'].forEach(id => {
+                const inp = document.getElementById('inp-' + id);
+                const sl = document.getElementById('sl-' + id);
+                inp.value = s[id === 'mileage' ? 'mileage' : 'years'];
+                sl.value = inp.value;
+            });
+            calc();
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // ACQUISITION COST
+        // ─────────────────────────────────────────────────────────────
+        function calcAcquisition(carPrice, residualPct, scenario, rate) {
+            const years = val('years');
+            const mode = SCENARIOS[scenario].mode;
+            const residual = carPrice * residualPct;
+            const netLoss = carPrice - residual;
+
+            if (mode === 'credit') {
+                // Аннуитетный кредит
+                const down = carPrice * 0.20;
+                const loan = carPrice - down;
+                const r = rate / 100 / 12;
+                const n = years * 12;
+                const monthly = r === 0 ? loan / n : loan * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                const totalPaid = down + monthly * n;
+                const totalInterest = totalPaid - carPrice;
+                return netLoss + totalInterest;
+            } else {
+                // Лизинг: аванс 0%, баллонный платёж 30%
+                // Сумма договора = carPrice, остаток = 30% (выкупной платёж)
+                const balloon = carPrice * 0.30;
+                const base = carPrice - balloon;
+                const r = rate / 100 / 12;
+                const n = years * 12;
+                const monthly = r === 0 ? base / n : base * r * Math.pow(1 + r, n) / (Math.pow(1 + r, n) - 1);
+                const totalPaid = monthly * n + balloon;
+                const totalInterest = totalPaid - carPrice;
+                return netLoss + totalInterest;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // TIRE COST
+        // ─────────────────────────────────────────────────────────────
+        function calcTires(tireCost, annualMileage, years, scenario) {
+            const totalMileage = annualMileage * years;
+            const mountingPerYear = 2 * 2500; // 2 раза × 2500
+            const mountingTotal = years * mountingPerYear;
+
+            let sets;
+            if (scenario === 'personal') {
+                // 1 комплект каждые 2 года при 20 000 км/год
+                sets = Math.ceil(years / 2);
+            } else {
+                // 2 комплекта в год при высоком пробеге
+                sets = years * 2;
+            }
+            // Лето + зима → умножаем на 2
+            return sets * tireCost * 2 + mountingTotal;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // INSURANCE
+        // ─────────────────────────────────────────────────────────────
+        function calcInsurance(carPrice, years, scenario, isPersonal) {
+            let kasko = 0;
+            if (isPersonal) {
+                for (let y = 1; y <= years; y++) {
+                    kasko += carPrice * 0.015 * Math.pow(0.9, y - 1);
+                }
+            } else {
+                // B2B — только первый год
+                kasko = carPrice * 0.015;
+            }
+            return kasko;
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // MAIN CALCULATION
+        // ─────────────────────────────────────────────────────────────
+        function calcTCO() {
+            const scenario = currentScenario;
+            const mileage = val('mileage');
+            const years = val('years');
+            const ePx = val('electricity');
+            const fPx = val('fuel');
+            const rate = val('rate');
+            const isPersonal = scenario === 'personal';
+
+            const prices = {
+                ev: val('ev-price'),
+                hev: val('hev-price'),
+                ice: val('ice-price'),
+            };
+
+            const residuals = {
+                ev: isPersonal ? CAR_PARAMS.ev.residualPersonal : CAR_PARAMS.ev.residualComm,
+                hev: isPersonal ? CAR_PARAMS.hev.residualPersonal : CAR_PARAMS.hev.residualComm,
+                ice: isPersonal ? CAR_PARAMS.ice.residualPersonal : CAR_PARAMS.ice.residualComm,
+            };
+
+            const results = {};
+
+            // ── EV ───────────────────────────────────
+            const evP = CAR_PARAMS.ev;
+            const evAcq = calcAcquisition(prices.ev, residuals.ev, scenario, rate);
+            const evEnergy = mileage * years * evP.energyConsumption / 100 * ePx;
+            const evServiceCount = Math.floor(mileage * years / evP.serviceInterval);
+            // Слесарный ремонт: 210 000 за 4 года (масштабируем)
+            const evSlesar = (210000 / 4) * years;
+            const evService = evServiceCount * evP.serviceCost + evSlesar;
+            const evBody = isPersonal ? 0 : evP.bodyRepairPerYear * years;
+            const evKasko = calcInsurance(prices.ev, years, scenario, isPersonal);
+            const evOsago = evP.osago[scenario] * years;
+            const evTax = 0;
+            const evTires = calcTires(evP.tireCost, mileage, years, scenario);
+            const evOther = isPersonal ? 0 :
+                (25000); // стикеры, телематика встроена
+            results.ev = {
+                acquisition: evAcq, energy: evEnergy, service: evService,
+                body: evBody, kasko: evKasko, osago: evOsago, tax: evTax,
+                tires: evTires, other: evOther,
+            };
+
+            // ── HEV ──────────────────────────────────
+            const hevP = CAR_PARAMS.hev;
+            const hevAcq = calcAcquisition(prices.hev, residuals.hev, scenario, rate);
+            const hevEnergy = mileage * years * hevP.fuelConsumption / 100 * fPx;
+            const hevServiceCount = Math.floor(mileage * years / hevP.serviceInterval);
+            const hevService = hevServiceCount * hevP.serviceCost * 1.5; // ТО + слесарь ~50% наверх
+            const hevBody = isPersonal ? 0 : hevP.bodyRepairPerYear * years;
+            const hevKasko = calcInsurance(prices.hev, years, scenario, isPersonal);
+            const hevOsago = hevP.osago[scenario] * years;
+            const hevTax = hevP.annualTax * years;
+            const hevTires = calcTires(hevP.tireCost, mileage, years, scenario);
+            const hevOther = isPersonal ? 0 :
+                (25000 + hevP.telemsInit + hevP.telemsAnnual * years);
+            results.hev = {
+                acquisition: hevAcq, energy: hevEnergy, service: hevService,
+                body: hevBody, kasko: hevKasko, osago: hevOsago, tax: hevTax,
+                tires: hevTires, other: hevOther,
+            };
+
+            // ── ICE ──────────────────────────────────
+            const iceP = CAR_PARAMS.ice;
+            const iceAcq = calcAcquisition(prices.ice, residuals.ice, scenario, rate);
+            const iceEnergy = mileage * years * iceP.fuelConsumption / 100 * fPx;
+            const iceServiceCount = Math.floor(mileage * years / iceP.serviceInterval);
+            const iceService = iceServiceCount * iceP.serviceCost * 1.5;
+            const iceBody = isPersonal ? 0 : iceP.bodyRepairPerYear * years;
+            const iceKasko = calcInsurance(prices.ice, years, scenario, isPersonal);
+            const iceOsago = iceP.osago[scenario] * years;
+            const iceTax = iceP.annualTax * years;
+            const iceTires = calcTires(iceP.tireCost, mileage, years, scenario);
+            const iceOther = isPersonal ? 0 :
+                (25000 + iceP.telemsInit + iceP.telemsAnnual * years);
+            results.ice = {
+                acquisition: iceAcq, energy: iceEnergy, service: iceService,
+                body: iceBody, kasko: iceKasko, osago: iceOsago, tax: iceTax,
+                tires: iceTires, other: iceOther,
+            };
+
+            // ── TOTALS ────────────────────────────────
+            const tco = {};
+            ['ev', 'hev', 'ice'].forEach(k => {
+                tco[k] = Object.values(results[k]).reduce((a, b) => a + b, 0);
+            });
+
+            return { results, tco, years, prices };
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // RENDER TABLE ROWS (once on init)
+        // ─────────────────────────────────────────────────────────────
+        function renderRows() {
+            const grid = document.getElementById('results-grid');
+            // Remove existing rows
+            grid.querySelectorAll('.rg-row').forEach(r => r.remove());
+
+            CATEGORIES.forEach(cat => {
+                const row = document.createElement('div');
+                row.className = 'rg-row';
+                row.id = 'row-' + cat.id;
+                row.innerHTML = `
+      <div class="rg-label">
+        <span class="cat-icon">${cat.icon}</span>
+        ${cat.label}
+        <div class="tooltip">${cat.tip}</div>
+      </div>
+      <div class="rg-cell ev" id="cell-ev-${cat.id}">—</div>
+      <div class="rg-cell hev" id="cell-hev-${cat.id}">—</div>
+      <div class="rg-cell ice" id="cell-ice-${cat.id}">—</div>
+    `;
+                grid.appendChild(row);
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // RENDER CHARTS
+        // ─────────────────────────────────────────────────────────────
+        const CAT_COLORS = [
+            '#6366f1', '#f59e0b', '#22d3ee', '#f43f5e',
+            '#a78bfa', '#34d399', '#fb923c', '#94a3b8', '#e879f9'
+        ];
+        const CAT_LABELS = CATEGORIES.map(c => c.label);
+
+        function initCharts() {
+            Chart.defaults.color = '#7878a0';
+            Chart.defaults.borderColor = 'rgba(255,255,255,0.06)';
+
+            const stackedCtx = document.getElementById('chart-stacked').getContext('2d');
+            stackedChart = new Chart(stackedCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['⚡ АТОМ EV', '🔋 Гибрид', '⛽ ДВС'],
+                    datasets: CATEGORIES.map((cat, i) => ({
+                        label: cat.label,
+                        data: [0, 0, 0],
+                        backgroundColor: CAT_COLORS[i],
+                        borderRadius: 2,
+                        borderSkipped: false,
+                    })),
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12, font: { size: 11 } } },
+                        tooltip: {
+                            callbacks: {
+                                label: ctx => `  ${ctx.dataset.label}: ${Math.round(ctx.raw).toLocaleString('ru-RU')} ₽`,
+                            },
+                        },
+                    },
+                    scales: {
+                        x: {
+                            stacked: true,
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { callback: v => (v / 1e6).toFixed(1) + ' млн' },
+                        },
+                        y: { stacked: true, grid: { display: false } },
+                    },
+                },
+            });
+
+            ['ev', 'hev', 'ice'].forEach(car => {
+                const ctx = document.getElementById(`chart-donut-${car}`).getContext('2d');
+                donutCharts[car] = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: CAT_LABELS,
+                        datasets: [{ data: new Array(9).fill(0), backgroundColor: CAT_COLORS, borderWidth: 1, borderColor: '#161628' }],
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: '60%',
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: ctx => `  ${ctx.label}: ${Math.round(ctx.raw).toLocaleString('ru-RU')} ₽`,
+                                },
+                            },
+                        },
+                    },
+                });
+            });
+        }
+
+        function updateCharts(results) {
+            if (!stackedChart) return;
+
+            stackedChart.data.datasets.forEach((ds, i) => {
+                const cat = CATEGORIES[i].id;
+                ds.data = [results.ev[cat] || 0, results.hev[cat] || 0, results.ice[cat] || 0];
+            });
+            stackedChart.update('active');
+
+            ['ev', 'hev', 'ice'].forEach(car => {
+                donutCharts[car].data.datasets[0].data = CATEGORIES.map(c => results[car][c.id] || 0);
+                donutCharts[car].update('active');
+            });
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // MAIN RENDER
+        // ─────────────────────────────────────────────────────────────
+        function calc() {
+            const { results, tco, years, prices } = calcTCO();
+            const months = years * 12;
+
+            // price tags
+            ['ev', 'hev', 'ice'].forEach(k => {
+                document.getElementById(`${k}-price-tag`).textContent = `Цена: ${fmt(prices[k])}`;
+            });
+
+            // TCO headers
+            ['ev', 'hev', 'ice'].forEach(k => {
+                const el = document.getElementById(`tco-${k}`);
+                el.textContent = fmtShort(tco[k]);
+                el.classList.add('tco-animated');
+                setTimeout(() => el.classList.remove('tco-animated'), 500);
+            });
+
+            // badges
+            const savEvPct = Math.round((1 - tco.ev / tco.ice) * 100);
+            const savHevPct = Math.round((1 - tco.hev / tco.ice) * 100);
+            document.getElementById('badge-ev').textContent = savEvPct > 0 ? `🟢 Дешевле ДВС на ${savEvPct}%` : 'vs ДВС';
+            document.getElementById('badge-hev').textContent = savHevPct > 0 ? `🔵 Дешевле ДВС на ${savHevPct}%` : 'vs ДВС';
+
+            // rows
+            CATEGORIES.forEach(cat => {
+                ['ev', 'hev', 'ice'].forEach(k => {
+                    const cell = document.getElementById(`cell-${k}-${cat.id}`);
+                    if (cell) {
+                        const v = results[k][cat.id];
+                        cell.textContent = v === 0 ? '—' : fmt(v);
+                    }
+                });
+            });
+
+            // savings blocks
+            const savMonthly = (tco.ice - tco.ev) / months;
+            const savTotal = tco.ice - tco.ev;
+            document.getElementById('save-monthly').textContent = fmt(Math.max(0, savMonthly)) + '/мес';
+            document.getElementById('save-total').textContent = fmt(Math.max(0, savTotal));
+            ['ev', 'hev', 'ice'].forEach(k => {
+                document.getElementById(`monthly-${k}`).textContent = fmt(tco[k] / months);
+                document.getElementById(`total-${k}`).textContent = fmtShort(tco[k]);
+            });
+
+            updateCharts(results);
+        }
+
+        // ─────────────────────────────────────────────────────────────
+        // INIT
+        // ─────────────────────────────────────────────────────────────
+        document.addEventListener('DOMContentLoaded', () => {
+            renderRows();
+            initCharts();
+            calc();
+        });
+    </script>
+</body>
+
+</html>
